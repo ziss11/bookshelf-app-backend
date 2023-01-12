@@ -80,16 +80,48 @@ const addBookHandler = (request, h) => {
   return response;
 };
 
-const getAllBooksHandler = () => ({
-  status: 'success',
-  data: {
-    'books': books.map(({id, name, publisher}) => ({
-      id, name, publisher}),
-    ),
-  },
-});
+const getAllBooksHandler = (request, h) => {
+  const {name, reading, finished} = request.query;
 
-const getBookDetailhandler = async (request, h) => {
+  let newBooks = [];
+
+  if (name) {
+    newBooks = books.filter((book) =>
+      book.name.toLowerCase().includes(name.toLowerCase()))
+        .map(
+            ({id, name, publisher}) => ({
+              id, name, publisher,
+            }),
+        );
+  } else if (reading) {
+    newBooks = books.filter((book) => book.reading == reading).map(
+        ({id, name, publisher}) => ({
+          id, name, publisher,
+        }),
+    );
+  } else if (finished) {
+    newBooks = books.filter((book) => book.finished == finished).map(
+        ({id, name, publisher}) => ({
+          id, name, publisher,
+        }),
+    );
+  } else {
+    newBooks = books.map(({id, name, publisher}) => ({
+      id, name, publisher,
+    }));
+  }
+  const response = h.response({
+    status: 'success',
+    data: {
+      'books': newBooks,
+    },
+  });
+
+  response.code(200);
+  return response;
+};
+
+const getBookDetailhandler = (request, h) => {
   const {bookId} = request.params;
   const book = books.filter((b) => b.id === bookId)[0];
 
@@ -113,7 +145,7 @@ const getBookDetailhandler = async (request, h) => {
   return response;
 };
 
-const editBookHandler = async (request, h) => {
+const editBookHandler = (request, h) => {
   const {bookId} = request.params;
   const {
     name,
@@ -181,9 +213,36 @@ const editBookHandler = async (request, h) => {
   return response;
 };
 
+const deleteBookHandler = (request, h) => {
+  const {bookId} = request.params;
+
+  const bookIndex = books.findIndex((book) => book.id === bookId);
+
+  if (bookIndex !== -1) {
+    books.splice(bookIndex, 1);
+
+    const response = h.response({
+      status: 'success',
+      message: 'Buku berhasil dihapus',
+    });
+
+    response.code(200);
+    return response;
+  }
+
+  const response = h.response({
+    status: 'fail',
+    message: 'Buku gagal dihapus. Id tidak ditemukan',
+  });
+
+  response.code(404);
+  return response;
+};
+
 module.exports = {
   addBookHandler,
   getAllBooksHandler,
   getBookDetailhandler,
   editBookHandler,
+  deleteBookHandler,
 };
